@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.5.0](https://www.github.com/nftstorage/ipfs-cluster/compare/v3.4.3...v3.5.0) (2021-11-23)
+
+
+### Features
+
+* add info api ([#29](https://www.github.com/nftstorage/ipfs-cluster/issues/29)) ([ceb5f85](https://www.github.com/nftstorage/ipfs-cluster/commit/ceb5f855e9ef3d3d8d5edc88c2d7b4ceb7a91271))
+
 ### [3.4.3](https://www.github.com/nftstorage/ipfs-cluster/compare/v3.4.2...v3.4.3) (2021-10-25)
 
 
