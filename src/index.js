@@ -389,6 +389,14 @@ export class Cluster {
   add(file, options) {
     return add(this, file, options)
   }
+  
+  /**
+   * @param {String} file
+   * @param {API.AddParams} [options]
+   */
+  addData(file, options) {
+    return addData(this, file, options)
+  }
 
   /**
    * @param {Iterable<File|Blob>} files
