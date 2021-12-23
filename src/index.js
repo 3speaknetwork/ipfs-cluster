@@ -114,6 +114,42 @@ export const add = async (cluster, file, options = {}) => {
 }
 
 /**
+ * Temporary fix until issue with File is further researched
+ *
+ * @param {API.Config} cluster
+ * @param {String} file
+ * @param {API.AddParams} [options]
+ * @returns {Promise<API.AddResponse>}
+ */
+export const addData = async (cluster, file, options = {}) => {
+  
+  const body = new FormData()
+  body.append('file', file)
+
+  const params = encodeAddParams(options)
+
+  try {
+    const result = await request(cluster, 'add', {
+      params,
+      method: 'POST',
+      body,
+      signal: options.signal
+    })
+    const data = params['stream-channels'] ? result : result[0]
+    return { ...data, cid: data.cid['/'] }
+  } catch (err) {
+    const error = /** @type {Error & {response?:Response}}  */ (err)
+    if (error.response?.ok) {
+      throw new Error(
+        `failed to parse response body from cluster add ${error.stack}`
+      )
+    } else {
+      throw error
+    }
+  }
+}
+
+/**
  * @param {API.Config} cluster
  * @param {Iterable<File|Blob>} files
  * @param {API.PinOptions} [options]
