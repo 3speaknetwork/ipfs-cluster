@@ -270,6 +270,18 @@ export const allocation = async (cluster, cid, { signal } = {}) => {
 
   return toPinResponse(data)
 }
+/**
+ * @param {API.Config} cluster
+ * @param {string} cid The CID to get pin status information for.
+ * @param {API.RequestOptions} [options]
+ * @returns {Promise<API.PinResponse>}
+ */
+export const allocationLs = async (cluster, { signal } = {}) => {
+  const path = `allocations`
+  const data = await request(cluster, path, { signal })
+
+  return toPinResponse(data)
+}
 
 /**
  * @param {API.Config} cluster
@@ -432,6 +444,10 @@ export class Cluster {
    */
   unpin(cid, options) {
     return unpin(this, cid, options)
+  }
+  
+  pinls(options) {
+   return allocationLs(this, options) 
   }
 
   /**
