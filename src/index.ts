@@ -1,6 +1,6 @@
 /* eslint-env browser */
 
-import * as API from './interface.js'
+import * as API from './interface'
 
 /**
  * Gets cluster version
@@ -9,11 +9,11 @@ import * as API from './interface.js'
  * @param {API.RequestOptions} [options]
  * @returns {Promise<string>}
  */
-export const version = async (cluster, { signal } = {}) => {
+export const version = async (cluster, { signal }) => {
   const result = await request(cluster, 'version', {
     method: 'GET',
     signal
-  })
+  } as any)
 
   if (typeof result.version !== 'string') {
     throw new Error(
@@ -35,11 +35,11 @@ export const version = async (cluster, { signal } = {}) => {
  * @param {API.RequestOptions} [options]
  * @returns {Promise<API.ClusterInfo>}
  */
-export const info = async (cluster, { signal } = {}) => {
+export const info = async (cluster, { signal }) => {
   const result = await request(cluster, 'id', {
     method: 'GET',
     signal
-  })
+  } as any)
 
   const failure = result.error || result.ipfs?.error || ''
   if (failure.length > 0) {
@@ -82,7 +82,7 @@ export const info = async (cluster, { signal } = {}) => {
  * @param {API.AddParams} [options]
  * @returns {Promise<API.AddResponse>}
  */
-export const add = async (cluster, file, options = {}) => {
+export const add = async (cluster, file, options) => {
   if (!(file instanceof File) && !(file instanceof Blob)) {
     throw new Error('invalid file')
   }
@@ -102,7 +102,7 @@ export const add = async (cluster, file, options = {}) => {
     const data = params['stream-channels'] ? result : result[0]
     return { ...data, cid: data.cid['/'] }
   } catch (err) {
-    const error = /** @type {Error & {response?:Response}}  */ (err)
+    const error = /** @type {Error & {response?:Response}}  */ err
     if (error.response?.ok) {
       throw new Error(
         `failed to parse response body from cluster add ${error.stack}`
@@ -121,8 +121,7 @@ export const add = async (cluster, file, options = {}) => {
  * @param {API.AddParams} [options]
  * @returns {Promise<API.AddResponse>}
  */
-export const addData = async (cluster, file, options = {}) => {
-  
+export const addData = async (cluster, file, options) => {
   const body = new FormData()
   body.append('file', file)
 
@@ -138,7 +137,7 @@ export const addData = async (cluster, file, options = {}) => {
     const data = params['stream-channels'] ? result : result[0]
     return { ...data, cid: data.cid['/'] }
   } catch (err) {
-    const error = /** @type {Error & {response?:Response}}  */ (err)
+    const error = /** @type {Error & {response?:Response}}  */ err
     if (error.response?.ok) {
       throw new Error(
         `failed to parse response body from cluster add ${error.stack}`
@@ -155,7 +154,7 @@ export const addData = async (cluster, file, options = {}) => {
  * @param {API.PinOptions} [options]
  * @returns {Promise<API.AddDirectoryResponse>}
  */
-export const addDirectory = async (cluster, files, options = {}) => {
+export const addDirectory = async (cluster, files, options) => {
   const body = new FormData()
 
   for (const f of files) {
@@ -198,14 +197,14 @@ export const addCAR = (cluster, car, options = {}) =>
  * @param {API.PinOptions} [options]
  * @returns {Promise<API.PinResponse>}
  */
-export const pin = async (cluster, cid, options = {}) => {
+export const pin = async (cluster, cid, options) => {
   const path = cid.startsWith('/') ? `pins${cid}` : `pins/${cid}`
 
   const data = await request(cluster, path, {
     params: encodePinOptions(options),
     method: 'POST',
     signal: options.signal
-  })
+  } as any)
 
   return toPinResponse(data)
 }
@@ -216,12 +215,12 @@ export const pin = async (cluster, cid, options = {}) => {
  * @param {API.RequestOptions} [options]
  * @returns {Promise<API.PinResponse>}
  */
-export const unpin = async (cluster, cid, { signal } = {}) => {
+export const unpin = async (cluster, cid, { signal }) => {
   const path = cid.startsWith('/') ? `pins${cid}` : `pins/${cid}`
   const data = await request(cluster, path, {
     method: 'DELETE',
     signal
-  })
+  } as any)
 
   return toPinResponse(data)
 }
@@ -232,18 +231,19 @@ export const unpin = async (cluster, cid, { signal } = {}) => {
  * @param {API.StatusOptions} [options]
  * @returns {Promise<API.StatusResponse>}
  */
-export const status = async (cluster, cid, { local, signal } = {}) => {
+export const status = async (cluster, cid, { local, signal }) => {
   const path = `pins/${encodeURIComponent(cid)}`
 
   const data = await request(cluster, path, {
     params: local != null ? { local } : undefined,
     signal
-  })
+  } as any)
 
-  let peerMap = data.peer_map
-  if (peerMap) {
+  const peer_map = data.peer_map as any[]
+  let peerMap
+  if (peer_map) {
     peerMap = Object.fromEntries(
-      Object.entries(peerMap).map(([k, v]) => [
+      Object.entries(peer_map).map(([k, v]) => [
         k,
         {
           peerName: v.peername,
@@ -264,9 +264,9 @@ export const status = async (cluster, cid, { local, signal } = {}) => {
  * @param {API.RequestOptions} [options]
  * @returns {Promise<API.PinResponse>}
  */
-export const allocation = async (cluster, cid, { signal } = {}) => {
+export const allocation = async (cluster, cid, { signal }) => {
   const path = `allocations/${encodeURIComponent(cid)}`
-  const data = await request(cluster, path, { signal })
+  const data = await request(cluster, path, { signal } as any)
 
   return toPinResponse(data)
 }
@@ -276,9 +276,9 @@ export const allocation = async (cluster, cid, { signal } = {}) => {
  * @param {API.RequestOptions} [options]
  * @returns {Promise<API.PinResponse>}
  */
-export const allocationLs = async (cluster, { signal } = {}) => {
+export const allocationLs = async (cluster, { signal }) => {
   const path = `allocations`
-  const data = await request(cluster, path, { signal })
+  const data = await request(cluster, path, { signal } as any)
 
   return toPinResponse(data)
 }
@@ -289,19 +289,20 @@ export const allocationLs = async (cluster, { signal } = {}) => {
  * @param {API.RecoverOptions} [options]
  * @returns {Promise<API.StatusResponse>}
  */
-export const recover = async (cluster, cid, { local, signal } = {}) => {
+export const recover = async (cluster, cid, { local, signal }) => {
   const path = `pins/${encodeURIComponent(cid)}/recover`
 
   const data = await request(cluster, path, {
     method: 'POST',
     params: local != null ? { local } : undefined,
     signal
-  })
+  } as any)
 
-  let peerMap = data.peer_map
-  if (peerMap) {
+  const peer_map = data.peer_map as any[]
+  let peerMap
+  if (peer_map) {
     peerMap = Object.fromEntries(
-      Object.entries(peerMap).map(([k, v]) => [
+      Object.entries(peer_map).map(([k, v]) => [
         k,
         {
           peerName: v.peername,
@@ -321,8 +322,8 @@ export const recover = async (cluster, cid, { local, signal } = {}) => {
  * @param {API.RequestOptions} [options]
  * @returns {Promise<string[]>}
  */
-export const metricNames = (cluster, { signal } = {}) =>
-  request(cluster, 'monitor/metrics', { signal })
+export const metricNames = (cluster, { signal }) =>
+  request(cluster, 'monitor/metrics', { signal } as any)
 
 /**
  *
@@ -368,7 +369,9 @@ export class Cluster {
    * @param {URL|string} url Cluster HTTP API root URL.
    * @param {{ headers?: Record<string, string> }} [options]
    */
-  constructor(url, { headers } = {}) {
+  url
+  headers
+  constructor(url, { headers }) {
     /**
      * @readonly
      */
@@ -401,7 +404,7 @@ export class Cluster {
   add(file, options) {
     return add(this, file, options)
   }
-  
+
   /**
    * @param {String} file
    * @param {API.AddParams} [options]
@@ -445,9 +448,9 @@ export class Cluster {
   unpin(cid, options) {
     return unpin(this, cid, options)
   }
-  
+
   pinls(options) {
-   return allocationLs(this, options) 
+    return allocationLs(this, options)
   }
 
   /**
@@ -489,7 +492,7 @@ export class Cluster {
 /**
  * @param {API.AddParams} options
  */
-const encodeAddParams = (options = {}) =>
+const encodeAddParams = (options) =>
   encodeParams({
     ...encodePinOptions(options),
     local: options.local,
@@ -517,7 +520,7 @@ const encodeAddParams = (options = {}) =>
 /**
  * @param {API.PinOptions} options
  */
-const encodePinOptions = (options = {}) =>
+const encodePinOptions = (options) =>
   encodeParams({
     name: options.name,
     mode: options.mode,
