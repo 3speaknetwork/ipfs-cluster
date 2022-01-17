@@ -16,7 +16,7 @@
     }
   },
   "scripts": {
-    "build": "tsc --build",
+    "build": "tsc --project ./tsconfig.release.json",
     "test": "mocha test/*.spec.js",
     "start": "docker-compose up",
     "format": "prettier --write .",
