@@ -25,13 +25,13 @@ export class IpfsClusterClient {
    * @param {URL|string} url Cluster HTTP API root URL.
    * @param {{ headers?: Record<string, string> }} [options]
    */
-  public readonly hostUrl: URL
+  public readonly clusterHost: URL
   /**
    * base64 encoded
    */
   private readonly authorizationHeader: string = ''
   constructor(host: string, username?: string, password?: string) {
-    this.hostUrl = new URL(host)
+    this.clusterHost = new URL(host)
 
     if (username && password) {
       this.authorizationHeader = `Basic ${Buffer.from(`${username}:${password}`, 'utf8').toString(
@@ -64,26 +64,13 @@ export class IpfsClusterClient {
   }
 
   async addFromFormData(formData: FormData, options?: AddParams): Promise<AddResponse> {
-
     const params = Utils.encodeAddParams(options)
 
     try {
-      //       const result = await request(
-      //         this,
-      //         'add',
-      //         {
-      //           params,
-      //           method: 'POST',
-      //           body: formData,
-      //           signal: options?.signal,
-      //         },
-      //         this.constructHeaders(formData.getHeaders()),
-      //       )
-
       const config: AxiosRequestConfig = {
         params,
         headers: this.constructHeaders(formData.getHeaders()),
-        baseURL: this.hostUrl.href,
+        baseURL: this.clusterHost.href,
         signal: options?.signal,
       }
 
@@ -116,49 +103,7 @@ export class IpfsClusterClient {
     const formData = new FormData()
     formData.append('file', file.contents, file.name)
 
-    const params = Utils.encodeAddParams(options)
-
-    try {
-      //       const result = await request(
-      //         this,
-      //         'add',
-      //         {
-      //           params,
-      //           method: 'POST',
-      //           body: formData,
-      //           signal: options?.signal,
-      //         },
-      //         this.constructHeaders(formData.getHeaders()),
-      //       )
-
-      const config: AxiosRequestConfig = {
-        params,
-        headers: this.constructHeaders(formData.getHeaders()),
-        baseURL: this.hostUrl.href,
-        signal: options?.signal,
-      }
-
-      const result = await axios.post<AddResponseItem[] | AddResponseItem>(`add`, formData, config)
-
-      if (!Array.isArray(result.data)) {
-        result.data = [result.data]
-      }
-
-      const item = result.data[0]
-      return {
-        name: item.name,
-        cid: item.cid['/'],
-        size: item.size,
-      }
-    } catch (err: any) {
-      if (axios.isAxiosError(err)) {
-        console.log(`response ${err.message}`)
-        console.log(`status ${err.code}`)
-        console.log(err.response?.data)
-        console.log(err.response?.statusText)
-      }
-      throw err
-    }
+    return await this.addFromFormData(formData)
   }
 
   async addData(file: FileWithName, options: AddParams): Promise<AddResponse> {
@@ -167,7 +112,7 @@ export class IpfsClusterClient {
 
     const params = Utils.encodeAddParams(options)
 
-    const result = await request(this, 'add', {
+    const result = await request(this.clusterHost.href, 'add', this.constructHeaders(), {
       params,
       method: 'POST',
       body,
@@ -187,7 +132,7 @@ export class IpfsClusterClient {
       body.append('file', f.contents, f.name)
     }
 
-    const results = await request(this, 'add', {
+    const results = await request(this.clusterHost.href, 'add', this.constructHeaders(), {
       params: {
         ...Utils.encodeAddParams(options),
         'stream-channels': false,
@@ -205,18 +150,10 @@ export class IpfsClusterClient {
     return results
   }
 
-  /**
-   * @param {API.AddParams} [options]
-   * @returns {Promise<API.AddResponse>}
-   */
-  addCAR(car: FileWithName, options: AddParams): Promise<AddResponse> {
-    return this.addFile(car, { ...options, format: 'car' })
-  }
-
   async pin(cid: string, options: PinOptions): Promise<PinResponse> {
     const path = cid.startsWith('/') ? `pins${cid}` : `pins/${cid}`
 
-    const data = await request(this, path, {
+    const data = await request(this.clusterHost.href, path, this.constructHeaders(), {
       params: Utils.getPinParams(options),
       method: 'POST',
       signal: options.signal,
@@ -227,7 +164,7 @@ export class IpfsClusterClient {
 
   async unpin(cid: string, options?: RequestOptions): Promise<PinResponse> {
     const path = cid.startsWith('/') ? `pins${cid}` : `pins/${cid}`
-    const data = await request(this, path, {
+    const data = await request(this.clusterHost.href, path, this.constructHeaders(), {
       ...options,
       method: 'DELETE',
     } as any)
@@ -237,7 +174,7 @@ export class IpfsClusterClient {
 
   async pinls(options: RequestOptions): Promise<PinResponse> {
     const path = `allocations`
-    const data = await request(this, path, options)
+    const data = await request(this.clusterHost.href, path, this.constructHeaders(), options)
 
     return Utils.toPinResponse(data)
   }
@@ -245,7 +182,7 @@ export class IpfsClusterClient {
   async status(cid: string, options?: StatusOptions): Promise<StatusResponse> {
     const path = `pins/${encodeURIComponent(cid)}`
 
-    const data = await request(this, path, {
+    const data = await request(this.clusterHost.href, path, this.constructHeaders(), {
       params: { local: options?.local },
       signal: options?.signal,
     } as any)
@@ -271,7 +208,7 @@ export class IpfsClusterClient {
 
   async allocation(cid: string, options?: RequestOptions): Promise<PinResponse> {
     const path = `allocations/${encodeURIComponent(cid)}`
-    const data = await request(this, path, options)
+    const data = await request(this.clusterHost.href, path, this.constructHeaders(), options)
 
     return Utils.toPinResponse(data)
   }
@@ -279,7 +216,7 @@ export class IpfsClusterClient {
   async recover(cid: string, options?: RequestOptions): Promise<StatusResponse> {
     const path = `pins/${encodeURIComponent(cid)}/recover`
 
-    const data = await request(this, path, {
+    const data = await request(this.clusterHost.href, path, this.constructHeaders(), {
       method: 'POST',
       params: { local: options?.local },
       signal: options?.signal,
@@ -309,6 +246,6 @@ export class IpfsClusterClient {
    * @returns {Promise<string[]>}
    */
   metricNames(options?: RequestOptions) {
-    return request(this, 'monitor/metrics', options)
+    return request(this.clusterHost.href, 'monitor/metrics', this.constructHeaders(), options)
   }
 }

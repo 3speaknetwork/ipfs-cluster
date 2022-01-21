@@ -11,8 +11,12 @@ export class Utils {
    * @param {API.RequestOptions} [options]
    * @returns {Promise<string>}
    */
-  static async version(cluster: IpfsClusterClient, options?: RequestOptions) {
-    const result = await request(cluster, 'version', options)
+  static async version(
+    cluster: IpfsClusterClient,
+    headers: Record<string, string>,
+    options?: RequestOptions,
+  ) {
+    const result = await request(cluster.clusterHost.href, 'version', headers, options)
 
     if (typeof result.version !== 'string') {
       throw new Error(
@@ -30,8 +34,12 @@ export class Utils {
    * @param {API.RequestOptions} [options]
    * @returns {Promise<API.ClusterInfo>}
    */
-  static async info(cluster: IpfsClusterClient, options?: RequestOptions) {
-    const result = await request(cluster, 'id', options)
+  static async info(
+    cluster: IpfsClusterClient,
+    headers: Record<string, string>,
+    options?: RequestOptions,
+  ) {
+    const result = await request(cluster.clusterHost.href, 'id', headers, options)
 
     const failure = result.error || result.ipfs?.error || ''
     if (failure.length > 0) {

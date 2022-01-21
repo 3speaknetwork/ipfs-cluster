@@ -1,14 +1,15 @@
-import * as assert from 'uvu/assert'
-
-import { CarWriter, CarReader } from '@ipld/car'
+import { CarWriter } from '@ipld/car'
 import * as CBOR from '@ipld/dag-cbor'
+import cluster from 'cluster'
+import FormData from 'form-data'
+import { createWriteStream } from 'fs'
 import { CID } from 'multiformats/cid'
 import { sha256 } from 'multiformats/hashes/sha2'
+import { PassThrough, Readable } from 'stream'
+import * as assert from 'uvu/assert'
+
 import { IpfsClusterClient } from '../src/ipfs-cluster.client'
 import { TestUtils } from './test.utils'
-import { Blob } from 'buffer'
-import { Duplex, PassThrough, Readable } from 'stream'
-import FormData from 'form-data'
 
 // Object.assign(global, { fetch, File, Blob, FormData })
 
@@ -62,6 +63,7 @@ describe('should operate', () => {
     })
 
     it('cars files are added as any other binary file', async () => {
+      console.log(`1`)
       const message = CBOR.encode({ hello: 'world' })
       const link = CID.createV1(CBOR.code, await sha256.digest(message))
 
@@ -72,37 +74,21 @@ describe('should operate', () => {
       const cid = CID.createV1(CBOR.code, await sha256.digest(dag))
 
       const { writer, out } = CarWriter.create([cid])
-      writer.put({ cid, bytes: dag })
-      writer.put({ cid: link, bytes: message })
-      writer.close()
+      const readable = Readable.from(out)
 
       const tunnel = new PassThrough()
-      //       const parts = []
-      for await (const chunk of out) {
-        // parts.push(chunk)
-        // tunnel.pipe(chunk)
-        tunnel.push(chunk)
-      }
+      readable.pipe(tunnel)
 
-      //       const car = new Blob(parts, { type: 'application/car' })
+      await writer.put({ cid, bytes: dag })
+      await writer.put({ cid: link, bytes: message })
+      await writer.close()
 
-      //       const result = await clusterClient.addFile({
-      //         name: 'blob',
-      //         contents: tunnel,
-      //       })
-
-      // TODO this
       const formData = new FormData()
       formData.append('file', tunnel, { contentType: 'application/car' })
-      //     formData.append('file', file.contents, file.name)
 
       const result = await clusterClient.addFromFormData(formData)
 
-      assert.equal(result.name, 'blob')
       assert.equal(result.cid, 'bafkreiegp2z6crgmgywbndbozu5i7qmgwbkyom5pthjh7hlnbx53jr2ov4')
-
-      console.log(`result size is `, result.size)
-      //       assert.equal(result.size, car.size)
     })
   })
 
@@ -127,66 +113,8 @@ describe('should operate', () => {
       assert.equal(dir?.size, 112)
       assert.equal(dir?.cid, 'bafybeidhbfwu4j2zckkqd42azgxm7hlvjjqj7dunvv7o7c3avyrhgtvppm')
     })
-
-    //     it('cars files are added as any other binary file', async () => {
-    //       const message = CBOR.encode({ hello: 'world' })
-    //       const link = CID.createV1(CBOR.code, await sha256.digest(message))
-
-    //       const dag = CBOR.encode({
-    //         to: 'world',
-    //         message: link,
-    //       })
-    //       const cid = CID.createV1(CBOR.code, await sha256.digest(dag))
-
-    //       const { writer, out } = CarWriter.create([cid])
-    //       writer.put({ cid, bytes: dag })
-    //       writer.put({ cid: link, bytes: message })
-    //       writer.close()
-
-    //       const parts = []
-    //       for await (const chunk of out) {
-    //         parts.push(chunk)
-    //       }
-    //       const car = new Blob(parts, { type: 'application/car' })
-
-    //       const result = await cluster.addDirectory([car])
-
-    //       assert.equal(result.length, 2, 'should be just file and dir')
-    //       const [file, dir] = result
-
-    //       assert.equal(file?.name, 'blob')
-    //       assert.equal(file?.cid, 'bafkreiegp2z6crgmgywbndbozu5i7qmgwbkyom5pthjh7hlnbx53jr2ov4')
-
-    //       assert.equal(file?.size, car.size)
-
-    //       assert.equal(dir?.cid, 'bafybeigb72yomjwb4skbiq2ksjujly32ijq3a4jawxfc7q2gbhbe7m4rm4')
-    //     })
   })
 
-  describe('cluster.addCAR', () => {
-    //     it('import car file', async () => {
-    //       const message = CBOR.encode({ hello: 'world' })
-    //       const link = CID.createV1(CBOR.code, await sha256.digest(message))
-    //       const dag = CBOR.encode({
-    //         to: 'world',
-    //         message: link,
-    //       })
-    //       const cid = CID.createV1(CBOR.code, await sha256.digest(dag))
-    //       const { writer, out } = CarWriter.create([cid])
-    //       writer.put({ cid, bytes: dag })
-    //       writer.put({ cid: link, bytes: message })
-    //       writer.close()
-    //       const parts = []
-    //       for await (const chunk of out) {
-    //         parts.push(chunk)
-    //       }
-    //       const car = new Blob(parts, { type: 'application/car' })
-    //       const result = await cluster.addCAR(car)
-    //       assert.equal(result.name, 'blob')
-    //       assert.equal(result.cid, cid.toString())
-    //       assert.equal(result.bytes, message.byteLength + dag.byteLength)
-    //     })
-  })
   describe('cluster.pin', () => {
     it('pins a CID', async () => {
       const file = TestUtils.getFileFromText('foo.txt', 'foo')

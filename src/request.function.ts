@@ -22,12 +22,12 @@ import axios, { AxiosRequestConfig } from 'axios'
  * @param {AbortSignal} [options.signal]
  */
 export async function request(
-  clusterClient: IpfsClusterClient,
+  baseUrl: string,
   path: string,
+  headers: Record<string, string>,
   options?: RequestOptions,
-  headers?: Record<string, string>,
 ) {
-  const endpoint = new URL(path, clusterClient.hostUrl)
+  const endpoint = new URL(path, baseUrl)
   for (const [key, value] of Object.entries(options?.params || {})) {
     if (value != null) {
       endpoint.searchParams.set(key, String(value))
