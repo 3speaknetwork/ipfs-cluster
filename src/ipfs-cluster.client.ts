@@ -44,7 +44,7 @@ export class IpfsClusterClient {
    * @param {API.RequestOptions} [options]
    */
   version(options?: RequestOptions) {
-    return Utils.version(this, options)
+    return Utils.version(this, this.constructHeaders(), options)
   }
 
   /**
@@ -52,7 +52,7 @@ export class IpfsClusterClient {
    * @returns {Promise<API.ClusterInfo>}
    */
   info(options?: RequestOptions) {
-    return Utils.info(this, options)
+    return Utils.info(this, this.constructHeaders(), options)
   }
 
   public constructHeaders(headers: Record<string, string> = {}): Record<string, string> {
