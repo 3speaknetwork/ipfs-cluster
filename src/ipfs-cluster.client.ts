@@ -63,10 +63,56 @@ export class IpfsClusterClient {
     }
   }
 
+  async addFromFormData(formData: FormData, options?: AddParams): Promise<AddResponse> {
+
+    const params = Utils.encodeAddParams(options)
+
+    try {
+      //       const result = await request(
+      //         this,
+      //         'add',
+      //         {
+      //           params,
+      //           method: 'POST',
+      //           body: formData,
+      //           signal: options?.signal,
+      //         },
+      //         this.constructHeaders(formData.getHeaders()),
+      //       )
+
+      const config: AxiosRequestConfig = {
+        params,
+        headers: this.constructHeaders(formData.getHeaders()),
+        baseURL: this.hostUrl.href,
+        signal: options?.signal,
+      }
+
+      const result = await axios.post<AddResponseItem[] | AddResponseItem>(`add`, formData, config)
+
+      if (!Array.isArray(result.data)) {
+        result.data = [result.data]
+      }
+
+      const item = result.data[0]
+      return {
+        name: item.name,
+        cid: item.cid['/'],
+        size: item.size,
+      }
+    } catch (err: any) {
+      if (axios.isAxiosError(err)) {
+        console.log(`response ${err.message}`)
+        console.log(`status ${err.code}`)
+        console.log(err.response?.data)
+        console.log(err.response?.statusText)
+      }
+      throw err
+    }
+  }
   /**
    * For endpoint https://docs.ipfs.io/reference/http/api/#api-v0-add
    */
-  async add(file: FileWithName, options?: AddParams): Promise<AddResponse> {
+  async addFile(file: FileWithName, options?: AddParams): Promise<AddResponse> {
     const formData = new FormData()
     formData.append('file', file.contents, file.name)
 
@@ -164,7 +210,7 @@ export class IpfsClusterClient {
    * @returns {Promise<API.AddResponse>}
    */
   addCAR(car: FileWithName, options: AddParams): Promise<AddResponse> {
-    return this.add(car, { ...options, format: 'car' })
+    return this.addFile(car, { ...options, format: 'car' })
   }
 
   async pin(cid: string, options: PinOptions): Promise<PinResponse> {

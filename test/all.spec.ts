@@ -1,14 +1,14 @@
 import * as assert from 'uvu/assert'
 
-import { CarWriter } from '@ipld/car'
+import { CarWriter, CarReader } from '@ipld/car'
 import * as CBOR from '@ipld/dag-cbor'
 import { CID } from 'multiformats/cid'
 import { sha256 } from 'multiformats/hashes/sha2'
 import { IpfsClusterClient } from '../src/ipfs-cluster.client'
 import { TestUtils } from './test.utils'
 import { Blob } from 'buffer'
-import cluster from 'cluster'
-import { Readable } from 'stream'
+import { Duplex, PassThrough, Readable } from 'stream'
+import FormData from 'form-data'
 
 // Object.assign(global, { fetch, File, Blob, FormData })
 
@@ -39,7 +39,7 @@ describe('should operate', () => {
   describe('cluster.add', () => {
     it('adds a file with streamchannels false', async () => {
       const file = TestUtils.getFileFromText('foo.txt', 'foo')
-      const result = await clusterClient.add(file, { streamChannels: false })
+      const result = await clusterClient.addFile(file, { streamChannels: false })
       assert.equal(result.name, file.name)
       assert.equal(result.cid, 'bafkreibme22gw2h7y2h7tg2fhqotaqjucnbc24deqo72b6mkl2egezxhvy')
       assert.equal(result.size, 3)
@@ -47,7 +47,7 @@ describe('should operate', () => {
 
     it('adds a file with streamchannels true', async () => {
       const file = TestUtils.getFileFromText('foo.txt', 'foo')
-      const result = await clusterClient.add(file, { streamChannels: true })
+      const result = await clusterClient.addFile(file, { streamChannels: true })
       assert.equal(result.name, file.name)
       assert.equal(result.cid, 'bafkreibme22gw2h7y2h7tg2fhqotaqjucnbc24deqo72b6mkl2egezxhvy')
       assert.equal(result.size, 3)
@@ -55,7 +55,7 @@ describe('should operate', () => {
 
     it('add a file via static API', async () => {
       const file = TestUtils.getFileFromText('bar.txt', 'bar')
-      const result = await clusterClient.add(file, config)
+      const result = await clusterClient.addFile(file, config)
       assert.equal(result.name, file.name)
       assert.equal(result.cid, 'bafkreih43yvs5w5fnp2aqya7w4q75g24gogrb3sct2qe7lsvcg3i7p4pxe')
       assert.equal(result.size, 3)
@@ -76,18 +76,33 @@ describe('should operate', () => {
       writer.put({ cid: link, bytes: message })
       writer.close()
 
-      const parts = []
+      const tunnel = new PassThrough()
+      //       const parts = []
       for await (const chunk of out) {
-        parts.push(chunk)
+        // parts.push(chunk)
+        // tunnel.pipe(chunk)
+        tunnel.push(chunk)
       }
-      const car = new Blob(parts, { type: 'application/car' })
 
-      const result = await clusterClient.add({ name: 'blob', contents: car.stream() as Readable })
+      //       const car = new Blob(parts, { type: 'application/car' })
+
+      //       const result = await clusterClient.addFile({
+      //         name: 'blob',
+      //         contents: tunnel,
+      //       })
+
+      // TODO this
+      const formData = new FormData()
+      formData.append('file', tunnel, { contentType: 'application/car' })
+      //     formData.append('file', file.contents, file.name)
+
+      const result = await clusterClient.addFromFormData(formData)
 
       assert.equal(result.name, 'blob')
       assert.equal(result.cid, 'bafkreiegp2z6crgmgywbndbozu5i7qmgwbkyom5pthjh7hlnbx53jr2ov4')
 
-      assert.equal(result.size, car.size)
+      console.log(`result size is `, result.size)
+      //       assert.equal(result.size, car.size)
     })
   })
 
@@ -175,7 +190,7 @@ describe('should operate', () => {
   describe('cluster.pin', () => {
     it('pins a CID', async () => {
       const file = TestUtils.getFileFromText('foo.txt', 'foo')
-      const { cid } = await clusterClient.add(file)
+      const { cid } = await clusterClient.addFile(file)
       const name = `name-${Date.now()}`
       const metadata = { meta: `test-${Date.now()}` }
       const result = await clusterClient.pin(cid, { name, metadata })
@@ -186,7 +201,7 @@ describe('should operate', () => {
 
     it('gets pin status', async () => {
       const file = TestUtils.getFileFromText('foo.txt', 'foo')
-      const { cid } = await clusterClient.add(file)
+      const { cid } = await clusterClient.addFile(file)
       const status = await clusterClient.status(cid)
 
       assert.equal(status.cid, cid)
@@ -200,7 +215,7 @@ describe('should operate', () => {
     it('gets pin allocation', async () => {
       const file = TestUtils.getFileFromText('foo.txt', 'foo')
       const metadata = { meta: `test-${Date.now()}` }
-      const { cid } = await clusterClient.add(file, { metadata })
+      const { cid } = await clusterClient.addFile(file, { metadata })
       const allocation = await clusterClient.allocation(cid)
       assert.equal(allocation.metadata, metadata)
     })
@@ -209,7 +224,7 @@ describe('should operate', () => {
   describe('cluster.recover', () => {
     it('recovers an errored pin', async () => {
       const file = TestUtils.getFileFromText('foo.txt', 'foo')
-      const { cid } = await clusterClient.add(file)
+      const { cid } = await clusterClient.addFile(file)
       const status = await clusterClient.recover(cid)
 
       assert.equal(status.cid, cid)
@@ -222,7 +237,7 @@ describe('should operate', () => {
   describe('cluster.unpin', () => {
     it('unpins a CID', async () => {
       const file = TestUtils.getFileFromText('foo.txt', 'foo')
-      const { cid } = await clusterClient.add(file)
+      const { cid } = await clusterClient.addFile(file)
       const result = await clusterClient.unpin(cid)
       assert.ok(typeof result === 'object')
       // TODO: is there something we can assert on in the response?
