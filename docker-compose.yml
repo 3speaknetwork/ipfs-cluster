@@ -57,6 +57,7 @@ services:
     ports:
       # Open API port (allows ipfs-cluster-ctl usage on host)
       - '127.0.0.1:9094:9094'
+      # - 9094:9094
       # The cluster swarm port would need  to be exposed if this container
       # was to connect to cluster peers on other hosts.
       # But this is just a testing cluster.

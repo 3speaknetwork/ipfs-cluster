@@ -1,3 +1,6 @@
+import { Readable } from 'stream'
+import { URL } from 'url'
+
 export interface Config {
   /**
    * IPFS Cluster URL
@@ -9,18 +12,27 @@ export interface Config {
   headers?: Record<string, string>
 }
 
+export interface FileWithName {
+  name: string
+  contents: Readable
+}
+
 export interface RequestOptions {
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
+  body?: any
   /**
    * If provided, corresponding request will be aborted when signalled.
    */
   signal?: AbortSignal
+  params?: any
+  local?: any
+  [key: string]: unknown
 }
 
 export type AddResponse = {
   cid: string
-  name?: string
-  size?: number | string
-  bytes?: number | string
+  name: string
+  size: number
 }
 
 export type AddDirectoryResponse = AddResponse[]
@@ -106,7 +118,7 @@ export enum PinType {
    * carry a Reference to the previous shard. ShardTypes are pinned with
    * MaxDepth=1 (root and direct children only).
    */
-  SHARD = 5
+  SHARD = 5,
 }
 
 export type PinResponse = {
@@ -214,7 +226,7 @@ export enum TrackerStatus {
    * The IPFS daemon is not pinning the item through this CID but it is tracked
    * in a cluster dag
    */
-  SHARDED = 'sharded'
+  SHARDED = 'sharded',
 }
 
 export interface PeerInfo {
