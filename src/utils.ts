@@ -126,7 +126,7 @@ export class Utils {
     return Object.fromEntries(Object.entries(metadata).map(([k, v]) => [`meta-${k}`, v]))
   }
 
-  static toPinResponse = (data: any): PinResponse => {
+  static toPinResponse(data: any): PinResponse {
     return {
       replicationFactorMin: data.replication_factor_min,
       replicationFactorMax: data.replication_factor_max,

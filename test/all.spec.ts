@@ -8,7 +8,7 @@ import { sha256 } from 'multiformats/hashes/sha2'
 import { PassThrough, Readable } from 'stream'
 import * as assert from 'uvu/assert'
 
-import { IpfsClusterClient } from '../src/ipfs-cluster.client'
+import { IpfsClusterClient } from '../src/ipfs-client'
 import { TestUtils } from './test.utils'
 
 // Object.assign(global, { fetch, File, Blob, FormData })
@@ -25,7 +25,7 @@ describe('should operate', () => {
     clusterClient = new IpfsClusterClient(config.host, 'user', 'secret')
   })
 
-  describe('cluster.version', () => {
+  describe('version', () => {
     it('gets cluster version (static)', async () => {
       const version = await clusterClient.version(config)
       assertField({ version }, 'version')
@@ -37,7 +37,7 @@ describe('should operate', () => {
     })
   })
 
-  describe('cluster.add', () => {
+  describe('add', () => {
     it('adds a file with streamchannels false', async () => {
       const file = TestUtils.getFileFromText('foo.txt', 'foo')
       const result = await clusterClient.addFile(file, { streamChannels: false })
@@ -92,7 +92,7 @@ describe('should operate', () => {
     })
   })
 
-  describe('cluster.addDirectory', () => {
+  describe('addDirectory', () => {
     it('adds a directory of files', async () => {
       const files = [
         TestUtils.getFileFromText('foo.txt', 'foo'),
@@ -115,7 +115,7 @@ describe('should operate', () => {
     })
   })
 
-  describe('cluster.pin', () => {
+  describe('pin', () => {
     it('pins a CID', async () => {
       const file = TestUtils.getFileFromText('foo.txt', 'foo')
       const { cid } = await clusterClient.addFile(file)
@@ -139,7 +139,7 @@ describe('should operate', () => {
     })
   })
 
-  describe('cluster.allocation', () => {
+  describe('allocation', () => {
     it('gets pin allocation', async () => {
       const file = TestUtils.getFileFromText('foo.txt', 'foo')
       const metadata = { meta: `test-${Date.now()}` }
@@ -149,7 +149,7 @@ describe('should operate', () => {
     })
   })
 
-  describe('cluster.recover', () => {
+  describe('recover', () => {
     it('recovers an errored pin', async () => {
       const file = TestUtils.getFileFromText('foo.txt', 'foo')
       const { cid } = await clusterClient.addFile(file)
@@ -162,7 +162,7 @@ describe('should operate', () => {
     })
   })
 
-  describe('cluster.unpin', () => {
+  describe('unpin', () => {
     it('unpins a CID', async () => {
       const file = TestUtils.getFileFromText('foo.txt', 'foo')
       const { cid } = await clusterClient.addFile(file)
@@ -172,7 +172,7 @@ describe('should operate', () => {
     })
   })
 
-  describe('cluster.metricNames', () => {
+  describe('metricNames', () => {
     it('gets metric names', async () => {
       const names = await clusterClient.metricNames()
       assert.ok(Array.isArray(names))
@@ -180,9 +180,9 @@ describe('should operate', () => {
     })
   })
 
-  describe('cluster.info', () => {
+  describe('info', () => {
     /**
-     * @param {cluster.API.ClusterInfo} info
+     * @param {API.ClusterInfo} info
      */
     const assertInfo = (info: any) => {
       assertField(info, 'id')

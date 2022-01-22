@@ -103,7 +103,7 @@ export class IpfsClusterClient {
     const formData = new FormData()
     formData.append('file', file.contents, file.name)
 
-    return await this.addFromFormData(formData)
+    return await this.addFromFormData(formData, options)
   }
 
   async addData(file: FileWithName, options: AddParams): Promise<AddResponse> {
@@ -209,6 +209,7 @@ export class IpfsClusterClient {
   async allocation(cid: string, options?: RequestOptions): Promise<PinResponse> {
     const path = `allocations/${encodeURIComponent(cid)}`
     const data = await request(this.clusterHost.href, path, this.constructHeaders(), options)
+    console.log(`ALLOCATION DATA`, data)
 
     return Utils.toPinResponse(data)
   }
