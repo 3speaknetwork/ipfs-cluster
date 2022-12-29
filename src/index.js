@@ -100,7 +100,7 @@ export const add = async (cluster, file, options = {}) => {
       signal: options.signal
     })
     const data = params['stream-channels'] ? result : result[0]
-    return { ...data, cid: data.cid['/'] }
+    return { ...data, cid: data.cid }
   } catch (err) {
     const error = /** @type {Error & {response?:Response}}  */ (err)
     if (error.response?.ok) {
